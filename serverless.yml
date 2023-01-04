@@ -1,0 +1,48 @@
+org: gkuppuswamy
+app: bb-hoops-api
+service: BB-HOOPS-API
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  environment:
+    DYNAMODB_HOOPS_TABLE: ${self:service}-hoopsTable-${sls:stage}
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:PutItem"
+        - "dynamodb:Get*"
+        - "dynamodb:Scan*"
+        - "dynamodb:UpdateItem"
+        - "dynamodb:DeleteItem"
+      Resource: arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/${self:service}-hoopsTable-${sls:stage}
+
+functions:
+  createHoops:
+    handler: createHoops.handler
+    events:
+      - httpApi:
+          path: /
+          method: post
+
+  getAllHoops:
+    handler: getAllHoops.handler
+    events:
+      - httpApi:
+          path: /
+          method: get
+
+resources:
+  Resources:
+    HoopsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: Queue_Id
+            AttributeType: S
+        BillingMode: PAY_PER_REQUEST
+        KeySchema:
+          - AttributeName: Queue_Id
+            KeyType: HASH
+        TableName: ${self:service}-hoopsTable-${sls:stage}
